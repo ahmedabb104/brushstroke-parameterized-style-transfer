@@ -8,29 +8,27 @@ from utils import initialize_brushstrokes
 
 def sample_quadratic_bezier_curve(s, c, e, num_points=10):
     """
-    Sample points along quadratic Bezier curves.
-
-    Args:
-        s: Start points [N, 2]
-        c: Control points [N, 2]
-        e: End points [N, 2]
+    sample points along quadratic Bezier curve
+    Inputs:
+        s: start points [N, 2]
+        c: control points [N, 2]
+        e: end points [N, 2]
         num_points: Number of samples per curve
-
-    Returns:
-        Points on curves [N, num_points, 2]
+    Output:
+        points on curves [N, num_points, 2]
     """
     N = s.shape[0]
     t = torch.linspace(0.0, 1.0, num_points, device=s.device)  # [num_points]
     t = t.unsqueeze(0).expand(N, -1)  # [N, num_points]
 
-    s_x, s_y = s[:, 0:1], s[:, 1:2]
-    c_x, c_y = c[:, 0:1], c[:, 1:2]
-    e_x, e_y = e[:, 0:1], e[:, 1:2]
+    p0_x, p0_y = s[:, 0:1], s[:, 1:2]
+    p1_x, p1_y = c[:, 0:1], c[:, 1:2]
+    p2_x, p2_y = e[:, 0:1], e[:, 1:2]
 
-    # Quadratic Bezier: B(t) = (1-t)^2 * s + 2(1-t)t * c + t^2 * e
-    # Equivalent form: c + (1-t)^2 * (s - c) + t^2 * (e - c)
-    x = c_x + (1.0 - t) ** 2 * (s_x - c_x) + t ** 2 * (e_x - c_x)
-    y = c_y + (1.0 - t) ** 2 * (s_y - c_y) + t ** 2 * (e_y - c_y)
+    # quadratic bezier curve from paper: B(t) = (1-t)^2 * p0 + 2(1-t)t * p1 + t^2 * p2
+    # equivalent form: p1 + (1-t)^2 * (p0 - p1) + t^2 * (p2 - p1)
+    x = p1_x + (1.0 - t) ** 2 * (p0_x - p1_x) + t ** 2 * (p2_x - p1_x)
+    y = p1_y + (1.0 - t) ** 2 * (p0_y - p1_y) + t ** 2 * (p2_y - p1_y)
     return torch.stack([x, y], dim=-1)  # [N, num_points, 2]
 
 
@@ -46,9 +44,8 @@ def _knn_on_grid(locations, grid_points, k):
     Returns:
         indices: [M, k] indices into locations
     """
-    # Compute pairwise distances [M, N]
     dists = torch.cdist(grid_points, locations)
-    # Get k nearest
+    # get k nearest
     _, indices = torch.topk(dists, k, dim=1, largest=False)
     return indices  # [M, k]
 
@@ -66,10 +63,10 @@ def _render_strokes(
     canvas_color: float,
 ) -> torch.Tensor:
     """
-    Core rendering: given KNN indices, render brushstrokes onto canvas.
-    Implements Algorithm 1 from the paper.
+    core rendering: given KNN indices, render brushstrokes onto canvas.
+    implements Algorithm 1 from the paper.
 
-    Args:
+    Inputs:
         curve_points: [N, S, 2] sampled points on each Bezier curve
         locations: [N, 2] brushstroke locations (clamped)
         colors: [N, 3] brushstroke colors (clamped 0-1)
@@ -79,60 +76,58 @@ def _render_strokes(
         K: strokes per pixel
         canvas_color: background intensity
 
-    Returns:
+    Output:
         canvas: [H, W, 3]
     """
     device = curve_points.device
     N, S, _ = curve_points.shape
 
-    # Gather curve points, colors, widths for nearest brushstrokes at each pixel
+    # gather curve points, colors, widths for nearest brushstrokes at each pixel
     flat_idx = indices.flatten()  # [H*W*K]
     canvas_curves = curve_points[flat_idx].view(H, W, K, S, 2)
     canvas_colors = colors[flat_idx].view(H, W, K, 3)
     canvas_widths = widths[flat_idx].view(H, W, K, 1)
 
-    # Full resolution pixel grid
+    # full resolution pixel grid
     t_H = torch.linspace(0.0, float(H), H, device=device)
     t_W = torch.linspace(0.0, float(W), W, device=device)
     P_y, P_x = torch.meshgrid(t_H, t_W, indexing="ij")
     P_full = torch.stack([P_x, P_y], dim=-1)  # [H, W, 2]
 
-    # Compute distance from each pixel to nearest point on each curve segment
-    # Line segments: a -> b for consecutive sampled points
+    # compute distance from each pixel to nearest point on each curve segment
     seg_a = canvas_curves[:, :, :, :-1, :]  # [H, W, K, S-1, 2]
     seg_b = canvas_curves[:, :, :, 1:, :]   # [H, W, K, S-1, 2]
     seg_ba = seg_b - seg_a                   # [H, W, K, S-1, 2]
 
-    # Vector from segment start to pixel
+    # vector from segment start to pixel
     p_a = P_full[:, :, None, None, :] - seg_a  # [H, W, K, S-1, 2]
 
-    # Project pixel onto each line segment, clamp to [0, 1]
+    # project pixel onto each line segment, clamp to [0, 1]
     t = torch.sum(seg_ba * p_a, dim=-1) / (torch.sum(seg_ba ** 2, dim=-1) + 1e-8)
     t = torch.clamp(t, 0.0, 1.0)
 
-    # Closest point on each segment
+    # closest point on each segment
     closest = seg_a + t.unsqueeze(-1) * seg_ba  # [H, W, K, S-1, 2]
 
-    # Squared distance from pixel to closest point on each segment
+    # squared distance from pixel to closest point on each segment
     dist_sq = torch.sum((P_full[:, :, None, None, :] - closest) ** 2, dim=-1)  # [H, W, K, S-1]
 
-    # Min distance across segments for each stroke
+    # minimum distance across segments for each stroke
     D_per_stroke = torch.amin(dist_sq, dim=-1)  # [H, W, K]
 
-    # Min distance across all K nearest strokes
+    # minimum distance across all K nearest strokes
     D = torch.amin(D_per_stroke, dim=-1)  # [H, W]
 
-    # Soft ranking: which stroke "wins" at each pixel (softmax over inverse distance)
+    # softmax ranking: which stroke "wins" at each pixel (softmax over inverse distance)
     ranking = F.softmax(100000.0 * (1.0 / (1e-8 + D_per_stroke)), dim=-1)  # [H, W, K]
 
-    # Weighted color and width
+    # weighted color and width
     I_colors = torch.einsum("hwkc,hwk->hwc", canvas_colors, ranking)  # [H, W, 3]
     bs = torch.einsum("hwkc,hwk->hwc", canvas_widths, ranking)        # [H, W, 1]
 
-    # Brush alpha mask (sigmoid of width - distance)
+    # brushstroke alpha mask (sigmoid of width - distance)
     bs_mask = torch.sigmoid(bs - D.unsqueeze(-1))  # [H, W, 1]
 
-    # Composite onto canvas
     canvas = torch.ones_like(I_colors) * canvas_color
     I = I_colors * bs_mask + (1.0 - bs_mask) * canvas
     return I  # [H, W, 3]
@@ -140,12 +135,11 @@ def _render_strokes(
 
 def stroke_renderer(curve_points, locations, colors, widths, H, W, K, canvas_color):
     """
-    Full differentiable brushstroke renderer (Algorithm 1).
-
-    Uses a coarse grid + KNN to efficiently find relevant strokes per pixel,
+    full differentiable brushstroke renderer (Algorithm 1).
+    uses a coarse grid + KNN to efficiently find relevant strokes per pixel,
     then renders with distance-based alpha compositing.
 
-    Args:
+    Inputs:
         curve_points: [N, S, 2] points on Bezier curves
         locations: [N, 2] stroke center locations
         colors: [N, 3] stroke colors
@@ -154,7 +148,7 @@ def stroke_renderer(curve_points, locations, colors, widths, H, W, K, canvas_col
         K: number of nearest strokes to consider per pixel
         canvas_color: background color value
 
-    Returns:
+    Output:
         canvas: [H, W, 3]
     """
     colors = torch.clamp(colors, 0.0, 1.0)
@@ -165,17 +159,17 @@ def stroke_renderer(curve_points, locations, colors, widths, H, W, K, canvas_col
 
     device = curve_points.device
 
-    # Coarse grid for KNN (every 5 pixels)
+    # coarse grid for KNN (every 5 pixels)
     t_H = torch.linspace(0.0, float(H), max(int(H // 5), 1), device=device)
     t_W = torch.linspace(0.0, float(W), max(int(W // 5), 1), device=device)
     P_y, P_x = torch.meshgrid(t_H, t_W, indexing="ij")
     coarse_grid = torch.stack([P_x, P_y], dim=-1).view(-1, 2)  # [G, 2]
 
-    # Find K nearest strokes for each coarse grid cell
+    # find K nearest strokes for each coarse grid cell
     K_actual = min(K, locations.shape[0])
     indices = _knn_on_grid(locations, coarse_grid, K_actual)  # [G, K]
 
-    # Reshape to coarse grid and upscale to full resolution
+    # reshape to coarse grid and upscale to full resolution
     cH, cW = len(t_H), len(t_W)
     indices = indices.view(cH, cW, K_actual).permute(2, 0, 1)  # [K, cH, cW]
     indices = TF.resize(
@@ -190,9 +184,9 @@ def stroke_renderer(curve_points, locations, colors, widths, H, W, K, canvas_col
 
 class BrushStrokeRenderer(torch.nn.Module):
     """
-    Differentiable brushstroke renderer module.
+    differentiable brushstroke renderer module.
 
-    Parameterizes N brushstrokes, each defined by:
+    parameterizes N brushstrokes, each with:
     - location: [N, 2] center position on canvas
     - curve_s, curve_e, curve_c: [N, 2] start/end/control points (relative to location)
     - color: [N, 3] RGB color
@@ -228,7 +222,7 @@ class BrushStrokeRenderer(torch.nn.Module):
         self.samples_per_curve = samples_per_curve
         self.strokes_per_pixel = strokes_per_pixel
 
-        # Initialize brushstrokes from content image (SLIC superpixels) or randomly
+        # initialize brushstrokes from content image (SLIC superpixels) or randomly
         if content_img is not None:
             location, s, e, c, width, color = initialize_brushstrokes(
                 content_img, num_strokes, canvas_height, canvas_width,
@@ -240,7 +234,7 @@ class BrushStrokeRenderer(torch.nn.Module):
                 length_scale, width_scale, init="random"
             )
 
-        # Flip x,y -> y,x convention
+        # flip x,y -> y,x convention
         location = location[..., ::-1].copy()
         s = s[..., ::-1].copy()
         e = e[..., ::-1].copy()

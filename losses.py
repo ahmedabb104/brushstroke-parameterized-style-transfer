@@ -1,8 +1,16 @@
 import torch
 import torch.nn.functional as F
-
 from vgg import VGG19
 
+# There are two main types of losses in the paper:
+# 1. Content loss: Euclidean distance between the features of the rendered image and the content image.
+# 2. Style loss: L2 loss between the Gram matrices of the rendered image and the style image.
+
+# There is also a total variation loss that encourages neighboring brushstrokes to have similar orientations.
+# This loss is from Johnson et al. (2016).
+
+# We also implement a curvature loss that penalizes excessive curvature of Bezier curves.
+# This loss is from the authors implementation of the paper.
 
 def gram_matrix(x):
     """Compute Gram matrix for style loss."""
@@ -14,12 +22,11 @@ def gram_matrix(x):
 
 class StyleTransferLosses(VGG19):
     """
-    VGG19-based content and style loss computation.
+    Content and style loss computation.
 
     Pre-computes target content features and style Gram matrices,
     then computes losses for a given input image on forward pass.
     """
-
     def __init__(
         self,
         weight_file,
@@ -46,7 +53,7 @@ class StyleTransferLosses(VGG19):
         self.style_features = {}
         self.feature_weights = {}
 
-        # Pre-compute content and style targets
+        # pre-compute content and style targets
         i, j = 0, 0
         self.to(content_img.device)
         with torch.no_grad():
@@ -90,10 +97,14 @@ class StyleTransferLosses(VGG19):
 
 def total_variation_loss(locations, curve_s, curve_e, K=10):
     """
-    Brushstroke total variation loss.
+    locations = brushstroke locations
+    curve_s = curve start point
+    curve_e = curve end point
+    K = number of nearest neighbors
 
     Encourages neighboring brushstrokes (by location) to have similar orientations.
     Uses KNN on stroke locations to find neighbors.
+    Limits the computation of distances from a pixel to only the K nearest brushstrokes.
     """
     se_vec = curve_e - curve_s  # [N, 2] direction vectors
 
@@ -102,10 +113,10 @@ def total_variation_loss(locations, curve_s, curve_e, K=10):
     _, nn_idx = torch.topk(dists, K + 1, dim=1, largest=False)
     nn_idx = nn_idx[:, 1:]  # exclude self, [N, K]
 
-    # Gather neighbor direction vectors
+    # gather neighbor direction vectors
     neighbor_vecs = se_vec[nn_idx.flatten()].view(se_vec.shape[0], K, 2)  # [N, K, 2]
 
-    # Compare projections (squared terms of direction)
+    # compare projections
     def projection(z):
         x, y = z[..., 0], z[..., 1]
         return torch.stack([x ** 2, y ** 2, x * y], dim=-1)
@@ -118,6 +129,10 @@ def total_variation_loss(locations, curve_s, curve_e, K=10):
 
 def curvature_loss(curve_s, curve_e, curve_c):
     """
+    curve_s = curve start point
+    curve_e = curve end point
+    curve_c = curve control point (determines the curvature of the curve)
+
     Penalizes excessive curvature of Bezier curves.
     Measures how far the control point deviates from the midpoint of s-e.
     """

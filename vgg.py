@@ -5,10 +5,15 @@ import torch.nn.functional as F
 import numpy as np
 import h5py
 
+# Pretrained VGG19 feature extractor to compute content loss.
+# Content loss is the L2 loss between the features of the rendered image and the content image.
+
+# Weights available at the following links:
+### -  https://www.dropbox.com/s/hv7b4eajrj7isyq/vgg_weights.pickle?dl=1
+### -  https://github.com/ftokarev/tf-vgg-weights/raw/master/vgg19_weights_normalized.h5
 
 class Normalization(nn.Module):
     """VGG preprocessing: RGB [0,1] -> BGR, subtract ImageNet means."""
-
     def __init__(self):
         super().__init__()
         # RGB -> BGR conversion kernel
@@ -37,7 +42,7 @@ class ConvRelu(nn.Sequential):
 
 
 class VGG19(nn.Sequential):
-    """VGG19 with normalized weights (Gatys-style) for neural style transfer."""
+    """VGG19 with normalized weights like Gatys et al. for feature extraction."""
 
     def __init__(self, weight_file="vgg_weights/vgg19_weights_normalized.h5"):
         super().__init__()
@@ -80,6 +85,7 @@ class VGG19(nn.Sequential):
             print(f"Downloading VGG19 weights to {path} ...")
             import urllib.request
 
+            # Alternative URL: https://www.dropbox.com/s/hv7b4eajrj7isyq/vgg_weights.pickle?dl=1
             url = "https://github.com/ftokarev/tf-vgg-weights/raw/master/vgg19_weights_normalized.h5"
             urllib.request.urlretrieve(url, path)
             print("Done.")

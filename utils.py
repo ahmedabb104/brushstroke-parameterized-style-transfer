@@ -43,14 +43,14 @@ def clusters_to_strokes(segments, img, H, W, sec_scale=0.001, width_scale=1):
         except Exception:
             continue
 
-        # Find the two farthest border points (longest axis of cluster)
+        # find the two farthest border points (longest axis of cluster)
         border_pts = points[hull.simplices.reshape(-1)]
         dists = np.sum((np.expand_dims(border_pts, 1) - border_pts) ** 2, axis=-1)
         max_a, max_b = np.nonzero(dists == np.max(dists))
         point_a = border_pts[max_a[0]]
         point_b = border_pts[max_b[0]]
 
-        # Compute width via orthogonal intersection with hull
+        # compute width via orthogonal intersection with hull
         v_ba = point_b - point_a
         v_orth = np.array([v_ba[1], -v_ba[0]])
         m = (point_a + point_b) / 2.0
@@ -93,7 +93,7 @@ def clusters_to_strokes(segments, img, H, W, sec_scale=0.001, width_scale=1):
     N = centers.shape[0]
     rel_num_pixels = 5 * num_pixels / np.sqrt(H * W)
 
-    # Scale locations to canvas coordinates
+    # scale locations to canvas coordinates
     location = centers.copy()
     location[:, 0] *= H
     location[:, 1] *= W
@@ -104,29 +104,29 @@ def clusters_to_strokes(segments, img, H, W, sec_scale=0.001, width_scale=1):
     e[:, 0] *= H
     e[:, 1] *= W
 
-    # Make start/end relative to location
+    # make start/end relative to location
     s -= location
     e -= location
 
-    # Control point: midpoint of s,e + small random perturbation
+    # control point: midpoint of s,e + small random perturbation
     c = (s + e) / 2.0 + np.stack(
         [np.random.uniform(-1, 1, N), np.random.uniform(-1, 1, N)], axis=-1
     )
 
-    # Center the curve around its centroid
+    # center the curve around its centroid
     sec_center = (s + e + c) / 3.0
     s -= sec_center
     e -= sec_center
     c -= sec_center
 
-    # Compute width from cluster size and shape
+    # compute width from cluster size and shape
     rel_q = np.quantile(rel_num_pixels, q=[0.3, 0.99])
     w_q = np.quantile(widths_arr, q=[0.3, 0.99])
     rel_num_pixels = np.clip(rel_num_pixels, rel_q[0], rel_q[1])
     widths_arr = np.clip(widths_arr, w_q[0], w_q[1])
     width = width_scale * rel_num_pixels.reshape(-1, 1) * widths_arr.reshape(-1, 1)
 
-    # Scale curve control points
+    # scale curve control points
     s, e, c = [x * sec_scale for x in [s, e, c]]
 
     return (
