@@ -89,8 +89,8 @@ def _render_strokes(
     canvas_widths = widths[flat_idx].view(H, W, K, 1)
 
     # full resolution pixel grid
-    t_H = torch.linspace(0.0, float(H), H, device=device)
-    t_W = torch.linspace(0.0, float(W), W, device=device)
+    t_H = torch.linspace(0.0, float(H - 1), H, device=device)
+    t_W = torch.linspace(0.0, float(W - 1), W, device=device)
     P_y, P_x = torch.meshgrid(t_H, t_W, indexing="ij")
     P_full = torch.stack([P_x, P_y], dim=-1)  # [H, W, 2]
 
@@ -152,16 +152,16 @@ def stroke_renderer(curve_points, locations, colors, widths, H, W, K, canvas_col
         canvas: [H, W, 3]
     """
     colors = torch.clamp(colors, 0.0, 1.0)
-    loc_x = torch.clamp(locations[:, 0:1], 0, W)
-    loc_y = torch.clamp(locations[:, 1:2], 0, H)
+    loc_x = torch.clamp(locations[:, 0:1], 0, W - 1)
+    loc_y = torch.clamp(locations[:, 1:2], 0, H - 1)
     locations = torch.cat([loc_x, loc_y], dim=1)
     widths = torch.exp(widths)
 
     device = curve_points.device
 
     # coarse grid for KNN (every 5 pixels)
-    t_H = torch.linspace(0.0, float(H), max(int(H // 5), 1), device=device)
-    t_W = torch.linspace(0.0, float(W), max(int(W // 5), 1), device=device)
+    t_H = torch.linspace(0.0, float(H - 1), max(int(H // 5), 1), device=device)
+    t_W = torch.linspace(0.0, float(W - 1), max(int(W // 5), 1), device=device)
     P_y, P_x = torch.meshgrid(t_H, t_W, indexing="ij")
     coarse_grid = torch.stack([P_x, P_y], dim=-1).view(-1, 2)  # [G, 2]
 
@@ -172,9 +172,10 @@ def stroke_renderer(curve_points, locations, colors, widths, H, W, K, canvas_col
     # reshape to coarse grid and upscale to full resolution
     cH, cW = len(t_H), len(t_W)
     indices = indices.view(cH, cW, K_actual).permute(2, 0, 1)  # [K, cH, cW]
+    # Upsample index map with nearest interpolation while preserving integer semantics.
     indices = TF.resize(
-        indices, size=[H, W], interpolation=TF.InterpolationMode.NEAREST
-    )  # [K, H, W]
+        indices.float(), size=[H, W], interpolation=TF.InterpolationMode.NEAREST
+    ).long()  # [K, H, W]
     indices = indices.permute(1, 2, 0)  # [H, W, K]
 
     return _render_strokes(

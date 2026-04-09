@@ -10,3 +10,5 @@ jupyter
 pandas
 tables
 tensorflow
+requests
+certifi

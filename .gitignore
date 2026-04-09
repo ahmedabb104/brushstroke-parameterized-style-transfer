@@ -1,4 +1,7 @@
+.venv/
+.DS_Store
 pretrained_vgg.zip
+evaluation_data.zip
 evaluation_data/
 deception_score_vgg/
 vgg_weights/
