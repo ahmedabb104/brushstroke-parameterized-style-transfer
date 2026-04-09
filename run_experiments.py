@@ -149,7 +149,7 @@ def _run_one_pair(
             "total_loss": float(total_loss.item()),
         }
 
-        if step % args.save_every == 0 or step == args.steps:
+        if args.save_every > 0 and step % args.save_every == 0:
             save_image(canvas_img, output_dir / f"stroke_step_{step:04d}.png")
 
     with torch.no_grad():
@@ -184,7 +184,12 @@ def main() -> None:
     parser.add_argument("--curv-weight", type=float, default=4.0)
     parser.add_argument("--lr-geom", type=float, default=1e-1)
     parser.add_argument("--lr-color", type=float, default=1e-2)
-    parser.add_argument("--save-every", type=int, default=25)
+    parser.add_argument(
+        "--save-every",
+        type=int,
+        default=0,
+        help="Save intermediate step images every N steps. Use 0 to disable.",
+    )
     parser.add_argument("--max-content", type=int, default=10)
     parser.add_argument("--max-styles", type=int, default=3)
     parser.add_argument("--seed", type=int, default=42)

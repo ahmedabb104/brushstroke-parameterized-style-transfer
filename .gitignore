@@ -1,5 +1,6 @@
 .venv/
 .DS_Store
+.mplconfig/
 pretrained_vgg.zip
 evaluation_data.zip
 evaluation_data/
