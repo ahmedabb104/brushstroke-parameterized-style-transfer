@@ -6,7 +6,7 @@ from skimage.segmentation import slic
 import torchvision.transforms as transforms
 import torch
 
-
+# Pooja is using Mac, and Ahmed is using Windows with cuda
 def pick_device() -> torch.device:
     """
     Best available torch device: CUDA, then Apple Silicon MPS (Metal), else CPU.

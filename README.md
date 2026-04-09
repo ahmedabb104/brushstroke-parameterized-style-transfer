@@ -16,23 +16,13 @@ pip install -r requirements.txt
 
 ### 1) Set up deception-score assets (~1 GB)
 
-```bash
-python3 setup_deception.py
-```
-
-You can also run:
 
 ```bash
 python3 download_sanakoyeu.py
 ```
 
-Both commands perform the same setup and place files under `deception_score_vgg/`.
+Rename the `evaluation_data/` folder to `deception_score_vgg/`.
 
-Optional sanity check:
-
-```bash
-python3 verify_deception.py
-```
 
 ### 2) Download starter content/style images
 
@@ -46,8 +36,8 @@ python3 download_project_images.py
 python3 run_experiments.py \
   --max-content 10 \
   --max-styles 3 \
-  --num-strokes-list "1000,2500,5000" \
-  --steps-list "50,100,200"
+  --num-strokes-list "200,1200,2500" \
+  --steps-list "100"
 ```
 
 ### 4) Aggregate metrics and plots

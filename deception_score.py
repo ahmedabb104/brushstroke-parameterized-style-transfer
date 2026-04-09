@@ -219,7 +219,6 @@ def get_artist_labels(
     Read artist -> integer label mapping from split.hdf5.
 
     By default this returns all artists found in the split file (typically 624).
-    Optionally filter with allowed_artists.
     """
     df = _load_split_dataframe(split_hdf5_path)
     if "label" not in df.columns:

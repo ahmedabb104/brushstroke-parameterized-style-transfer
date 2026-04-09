@@ -5,5 +5,4 @@ evaluation_data.zip
 evaluation_data/
 deception_score_vgg/
 vgg_weights/
-results/
 __pycache__/
