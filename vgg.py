@@ -83,11 +83,21 @@ class VGG19(nn.Sequential):
         if not os.path.exists(path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             print(f"Downloading VGG19 weights to {path} ...")
-            import urllib.request
+            url = (
+                "https://github.com/ftokarev/tf-vgg-weights/"
+                "raw/master/vgg19_weights_normalized.h5"
+            )
+            try:
+                import urllib.request
 
-            # Alternative URL: https://www.dropbox.com/s/hv7b4eajrj7isyq/vgg_weights.pickle?dl=1
-            url = "https://github.com/ftokarev/tf-vgg-weights/raw/master/vgg19_weights_normalized.h5"
-            urllib.request.urlretrieve(url, path)
+                urllib.request.urlretrieve(url, path)
+            except Exception:
+                import requests
+
+                r = requests.get(url, timeout=120)
+                r.raise_for_status()
+                with open(path, "wb") as f:
+                    f.write(r.content)
             print("Done.")
 
         with h5py.File(path, "r") as f:

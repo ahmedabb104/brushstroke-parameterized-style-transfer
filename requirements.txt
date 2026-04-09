@@ -7,3 +7,8 @@ scikit-image
 scipy
 matplotlib
 jupyter
+pandas
+tables
+tensorflow
+requests
+certifi

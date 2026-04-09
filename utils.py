@@ -6,6 +6,17 @@ from skimage.segmentation import slic
 import torchvision.transforms as transforms
 import torch
 
+# Pooja is using Mac, and Ahmed is using Windows with cuda
+def pick_device() -> torch.device:
+    """
+    Best available torch device: CUDA, then Apple Silicon MPS (Metal), else CPU.
+    """
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
 
 def image_loader(image_path, img_size, device):
     """Load and preprocess an image to a tensor [1, 3, H, W] in [0, 1]."""
