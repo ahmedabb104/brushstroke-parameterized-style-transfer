@@ -81,7 +81,7 @@ def get_deception_paths(
     raise FileNotFoundError(
         "Deception assets not found. Expected split.hdf5 and model.ckpt-* under "
         "deception_score_vgg/ or evaluation_data/. Run:\n"
-        "  python3 setup_deception.py"
+        "  python3 download_sanakoyeu.py"
     )
 
 
