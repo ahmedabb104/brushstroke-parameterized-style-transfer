@@ -2,7 +2,9 @@
 
 Reimplementation of Kotovenko et al.: [Rethinking Style Transfer: From Pixels to Parameterized Brushstrokes](https://arxiv.org/pdf/2103.17185)
 
-## Quickstart (Single Run)
+![horse](results/horse_comparison.png)
+
+## Quickstart (Single rendered image)
 
 1. Install dependencies:
 
@@ -10,9 +12,9 @@ Reimplementation of Kotovenko et al.: [Rethinking Style Transfer: From Pixels to
 pip install -r requirements.txt
 ```
 
-2. Open and run `brushstrokes.ipynb`.
+2. Open and run `brushstrokes.ipynb`
 
-## Proposal-Aligned Batch Experiments
+## Batch Experiments (render many images)
 
 ### 1) Set up deception-score assets (~1 GB)
 
@@ -24,32 +26,13 @@ python3 download_sanakoyeu.py
 Rename the `evaluation_data/` folder to `deception_score_vgg/`.
 
 
-### 2) Download starter content/style images
+### 2) Run either:
+- `end_to_end_experiments.ipynb`
+- `end_to_end_experiments_1000_2500_5000.ipynb`
 
-```bash
-python3 download_project_images.py
-```
-
-### 3) Run parameter sweeps
-
-```bash
-python3 run_experiments.py \
-  --max-content 10 \
-  --max-styles 3 \
-  --num-strokes-list "200,1200,2500" \
-  --steps-list "100"
-```
-
-### 4) Aggregate metrics and plots
-
-```bash
-python3 analyze_results.py \
-  --metrics-csv results/experiments/metrics.csv \
-  --output-dir results/experiments
-```
 
 ## Outputs
 
-- Per-run images and checkpoints: `results/experiments/*`
-- Run-level metrics CSV: `results/experiments/metrics.csv`
-- Aggregate summary + plots: `results/experiments/aggregate_summary.csv` and `results/experiments/*.png`
+- Per-run images: `results/`
+- Run-level metrics CSV: `results/experiments_XX/metrics.csv`
+- Aggregate summary + plots: `results/experiments_XX/aggregate_summary.csv` and `results/experiments_XX/*.png`

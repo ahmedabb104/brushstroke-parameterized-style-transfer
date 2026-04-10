@@ -213,7 +213,7 @@ class BrushStrokeRenderer(torch.nn.Module):
         elif canvas_color == "black":
             self.canvas_color = 0.0
         elif canvas_color == "noise":
-            self.canvas_color = 0.5  # fallback; noise handled differently in forward
+            self.canvas_color = 0.5  # fallback
         else:
             self.canvas_color = 1.0
 
@@ -223,7 +223,7 @@ class BrushStrokeRenderer(torch.nn.Module):
         self.samples_per_curve = samples_per_curve
         self.strokes_per_pixel = strokes_per_pixel
 
-        # initialize brushstrokes from content image (SLIC superpixels) or randomly
+        # initialize brushstrokes from content image or randomly
         if content_img is not None:
             location, s, e, c, width, color = initialize_brushstrokes(
                 content_img, num_strokes, canvas_height, canvas_width,
@@ -235,7 +235,6 @@ class BrushStrokeRenderer(torch.nn.Module):
                 length_scale, width_scale, init="random"
             )
 
-        # flip x,y -> y,x convention
         location = location[..., ::-1].copy()
         s = s[..., ::-1].copy()
         e = e[..., ::-1].copy()
@@ -267,4 +266,4 @@ class BrushStrokeRenderer(torch.nn.Module):
             self.strokes_per_pixel,
             self.canvas_color,
         )
-        return canvas  # [H, W, 3]
+        return canvas

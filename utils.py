@@ -48,11 +48,7 @@ def clusters_to_strokes(segments, img, H, W, sec_scale=0.001, width_scale=1):
 
         nonzero = np.nonzero(mask)
         points = np.stack((nonzero[0], nonzero[1]), axis=-1)
-
-        try:
-            hull = ConvexHull(points)
-        except Exception:
-            continue
+        hull = ConvexHull(points)
 
         # find the two farthest border points (longest axis of cluster)
         border_pts = points[hull.simplices.reshape(-1)]
@@ -157,7 +153,7 @@ def initialize_brushstrokes(
     """
     Initialize brushstroke parameters.
 
-    Args:
+    Inputs:
         content_img: numpy array [H, W, 3] in [0, 1] or None
         num_strokes: number of strokes
         canvas_height, canvas_width: canvas dimensions
@@ -165,7 +161,7 @@ def initialize_brushstrokes(
         width_scale: scale for widths
         init: 'sp' for SLIC superpixel init, 'random' for random
 
-    Returns:
+    Outputs:
         location, s, e, c, width, color arrays
     """
     if init == "random" or content_img is None:
