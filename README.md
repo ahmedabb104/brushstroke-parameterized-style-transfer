@@ -12,7 +12,7 @@ Reimplementation of Kotovenko et al.: [Rethinking Style Transfer: From Pixels to
 pip install -r requirements.txt
 ```
 
-2. Open and run `brushstrokes.ipynb`
+2. Open and run `jupyter_notebooks/brushstrokes.ipynb`
 
 ## Batch Experiments (render many images)
 
@@ -27,8 +27,8 @@ Rename the `evaluation_data/` folder to `deception_score_vgg/`.
 
 
 ### 2) Run either:
-- `end_to_end_experiments.ipynb`
-- `end_to_end_experiments_1000_2500_5000.ipynb`
+- `jupyter_notebooks/end_to_end_experiments.ipynb`
+- `jupyter_notebooks/end_to_end_experiments_1000_2500_5000.ipynb`
 
 
 ## Outputs
