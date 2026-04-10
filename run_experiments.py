@@ -149,11 +149,7 @@ def _run_one_pair(
             "total_loss": float(total_loss.item()),
         }
 
-<<<<<<< HEAD
-        if step % args.save_every == 0 or step == args.steps:
-=======
         if args.save_every > 0 and step % args.save_every == 0:
->>>>>>> a062557663a18d8f5a33ff14bcce82878acce3e1
             save_image(canvas_img, output_dir / f"stroke_step_{step:04d}.png")
 
     with torch.no_grad():
