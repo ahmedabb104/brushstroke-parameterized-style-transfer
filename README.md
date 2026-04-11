@@ -4,6 +4,8 @@ Reimplementation of Kotovenko et al.: [Rethinking Style Transfer: From Pixels to
 
 ![horse](results/horse_comparison.png)
 
+## ----- All experiment results are in the `results/` folder -----
+
 ## Quickstart (Single rendered image)
 
 1. Install dependencies:
