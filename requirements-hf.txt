@@ -5,11 +5,4 @@ h5py
 Pillow
 scikit-image
 scipy
-matplotlib
-jupyter
-pandas
-tables
-tensorflow
-requests
-certifi
 gradio>=4.0

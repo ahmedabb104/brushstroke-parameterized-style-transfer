@@ -1,3 +1,14 @@
+---
+title: Brushstroke Style Transfer
+emoji: 🎨
+colorFrom: indigo
+colorTo: pink
+sdk: gradio
+sdk_version: 4.44.0
+app_file: app.py
+pinned: false
+---
+
 # Brushstroke Parameterized Style Transfer
 
 Reimplementation of Kotovenko et al.: [Rethinking Style Transfer: From Pixels to Parameterized Brushstrokes](https://arxiv.org/pdf/2103.17185)
@@ -5,6 +16,17 @@ Reimplementation of Kotovenko et al.: [Rethinking Style Transfer: From Pixels to
 ![horse](results/horse_comparison.png)
 
 ## ----- All experiment results are in the `results/` folder -----
+
+## Web demo (Gradio)
+
+Launch the interactive web app:
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+Upload a content image and a painting, tune stroke count / steps, and watch the canvas converge live. Deployable to Hugging Face Spaces (note: free CPU Spaces will be very slow — a GPU Space is strongly recommended).
 
 ## Quickstart (Single rendered image)
 

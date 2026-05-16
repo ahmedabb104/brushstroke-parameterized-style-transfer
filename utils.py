@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from PIL import Image
-from scipy.spatial import ConvexHull
+from scipy.spatial import ConvexHull, QhullError
 from skimage.segmentation import slic
 import torchvision.transforms as transforms
 import torch
@@ -48,7 +48,11 @@ def clusters_to_strokes(segments, img, H, W, sec_scale=0.001, width_scale=1):
 
         nonzero = np.nonzero(mask)
         points = np.stack((nonzero[0], nonzero[1]), axis=-1)
-        hull = ConvexHull(points)
+        try:
+            hull = ConvexHull(points)
+        except QhullError:
+            # Skip degenerate (e.g. collinear) superpixel clusters that have no 2D hull.
+            continue
 
         # find the two farthest border points (longest axis of cluster)
         border_pts = points[hull.simplices.reshape(-1)]
