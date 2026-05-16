@@ -15,18 +15,17 @@ Reimplementation of Kotovenko et al.: [Rethinking Style Transfer: From Pixels to
 
 ![horse](results/horse_comparison.png)
 
-## ----- All experiment results are in the `results/` folder -----
 
 ## Web demo (Gradio)
 
-Launch the interactive web app:
+**HuggingFace Spaces URL:** https://huggingface.co/spaces/ahmedabb101/brushstroke-style-transfer
+
+**Local:** Launch the interactive web app:
 
 ```bash
 pip install -r requirements.txt
 python app.py
 ```
-
-Upload a content image and a painting, tune stroke count / steps, and watch the canvas converge live. Deployable to Hugging Face Spaces (note: free CPU Spaces will be very slow — a GPU Space is strongly recommended).
 
 ## Quickstart (Single rendered image)
 
